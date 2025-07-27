@@ -1,2 +1,2 @@
 # CodeClauseInternship_imagegallery
-it is a image gallery
+it is an image gallery
