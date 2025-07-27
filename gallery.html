@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Image Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .filter-btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            width: 300px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s ease;
+            opacity: 1;
+            transform: scale(1);
+            background: white;
+        }
+
+        .gallery-item.hidden {
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .gallery-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            color: white;
+            padding: 30px 20px 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover .gallery-info {
+            transform: translateY(0);
+        }
+
+        .gallery-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .gallery-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            backdrop-filter: blur(10px);
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            margin-top: 50px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .no-results.show {
+            opacity: 1;
+        }
+
+        .stats {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .filter-bar {
+                gap: 10px;
+            }
+
+            .filter-btn {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+
+            .search-input {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Image Gallery</h1>
+        
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search images..." id="searchInput">
+        </div>
+
+        <div class="filter-bar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="nature">Nature</button>
+            <button class="filter-btn" data-filter="architecture">Architecture</button>
+            <button class="filter-btn" data-filter="animals">Animals</button>
+            <button class="filter-btn" data-filter="technology">Technology</button>
+            <button class="filter-btn" data-filter="food">Food</button>
+        </div>
+
+        <div class="stats" id="stats">
+            Showing <span id="visibleCount">12</span> of <span id="totalCount">12</span> images
+        </div>
+
+        <div class="gallery" id="gallery"></div>
+
+        <div class="no-results" id="noResults">
+            No images found matching your criteria 🔍
+        </div>
+    </div>
+
+    <script>
+        // Sample image data
+        const images = [
+            {
+                id: 1,
+                src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop",
+                title: "Mountain Lake",
+                category: "nature",
+                tags: ["mountains", "lake", "scenic"]
+            },
+            {
+                id: 2,
+                src: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop",
+                title: "Modern Architecture",
+                category: "architecture",
+                tags: ["building", "modern", "design"]
+            },
+            {
+                id: 3,
+                src: "https://images.unsplash.com/photo-1549740425-5e9ed4d8cd34?w=400&h=300&fit=crop",
+                title: "Tiger Portrait",
+                category: "animals",
+                tags: ["tiger", "wildlife", "portrait"]
+            },
+            {
+                id: 4,
+                src: "images/smartphone.jpg",
+                title: "Smartphone Tech",
+                category: "technology",
+                tags: ["phone", "gadget", "modern"]
+            },
+            {
+                id: 5,
+                src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop",
+                title: "Gourmet Dish",
+                category: "food",
+                tags: ["cooking", "gourmet", "restaurant"]
+            },
+            {
+                id: 6,
+                src: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
+                title: "Forest Path",
+                category: "nature",
+                tags: ["forest", "trees", "path"]
+            },
+            {
+                id: 7,
+                src: "images/city-skyline.jpg",
+                title: "City Skyline",
+                category: "architecture",
+                tags: ["city", "skyline", "urban"]
+            },
+            {
+                id: 8,
+                src: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=300&fit=crop",
+                title: "Elephant Family",
+                category: "animals",
+                tags: ["elephant", "family", "safari"]
+            },
+            {
+                id: 9,
+                src: "images/gaming-setup.jpg",
+                title: "Gaming Setup",
+                category: "technology",
+                tags: ["gaming", "computer", "setup"]
+            },
+            {
+                id: 10,
+                src: "images/pizza-slice.jpg",
+                title: "Pizza Slice",
+                category: "food",
+                tags: ["pizza", "italian", "cheese"]
+            },
+            {
+                id: 11,
+                src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop",
+                title: "Ocean Waves",
+                category: "nature",
+                tags: ["ocean", "waves", "beach"]
+            },
+            {
+                id: 12,
+                src: "https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=400&h=300&fit=crop",
+                title: "Glass Building",
+                category: "architecture",
+                tags: ["glass", "reflection", "corporate"]
+            }
+        ];
+
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Initialize gallery
+        function initGallery() {
+            renderGallery();
+            setupEventListeners();
+            updateStats();
+        }
+
+        // Render gallery items
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            const filteredImages = getFilteredImages();
+
+            filteredImages.forEach(image => {
+                const galleryItem = createGalleryItem(image);
+                gallery.appendChild(galleryItem);
+            });
+
+            // Handle no results
+            const noResults = document.getElementById('noResults');
+            if (filteredImages.length === 0) {
+                noResults.classList.add('show');
+            } else {
+                noResults.classList.remove('show');
+            }
+
+            updateStats();
+        }
+
+        // Create gallery item HTML
+        function createGalleryItem(image) {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = `
+                <img src="${image.src}" alt="${image.title}" loading="lazy">
+                <div class="gallery-info">
+                    <div class="gallery-title">${image.title}</div>
+                    <div class="gallery-tags">
+                        ${image.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            return item;
+        }
+
+        // Get filtered images based on current filter and search
+        function getFilteredImages() {
+            return images.filter(image => {
+                const matchesFilter = currentFilter === 'all' || image.category === currentFilter;
+                const matchesSearch = currentSearch === '' || 
+                    image.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    image.tags.some(tag => tag.toLowerCase().includes(currentSearch.toLowerCase()));
+                
+                return matchesFilter && matchesSearch;
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    e.target.classList.add('active');
+                    
+                    currentFilter = e.target.dataset.filter;
+                    renderGallery();
+                });
+            });
+
+            // Search input
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                currentSearch = e.target.value;
+                renderGallery();
+            });
+
+            // Add debounce to search for better performance
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentSearch = e.target.value;
+                    renderGallery();
+                }, 300);
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            const filteredImages = getFilteredImages();
+            document.getElementById('visibleCount').textContent = filteredImages.length;
+            document.getElementById('totalCount').textContent = images.length;
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', initGallery);
+
+        // Add smooth scrolling animation when filters change
+        function smoothFilter(targetFilter) {
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            
+            // First hide items that don't match
+            galleryItems.forEach(item => {
+                item.style.transition = 'all 0.3s ease';
+                item.classList.add('hidden');
+            });
+
+            // Then show matching items after a delay
+            setTimeout(() => {
+                renderGallery();
+                const newItems = document.querySelectorAll('.gallery-item');
+                newItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.classList.remove('hidden');
+                    }, index * 50);
+                });
+            }, 300);
+        }
+    </script>
+</body>
+</html>
